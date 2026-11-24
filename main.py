@@ -3,11 +3,24 @@
 Writes a single sentence (at most 200 characters) explaining the modern
 internet to a time traveler who has just stepped out of the year 1800.
 
-The sentence is built only from words a person from 1800 could know:
-a library, books, a letter, a breath. No word coined after the traveler's
-time appears in it. The program validates the sentence before writing it:
-exactly one sentence, at most 200 characters, and none of the banned
-post-1800 words in its denylist.
+The vocabulary rule: every word in the sentence must predate 1800, so the
+traveler can understand it with the knowledge he already carries. A word
+is allowed only if a person living in 1800 could know what it means:
+"library", "book", "letter", "breath" are fine, because libraries, books,
+letters and breaths all existed then. Any word coined after 1800 — or tied
+to an invention that came later — is rejected, because the traveler would
+have no referent for it. Examples of rejected words: "internet" (the
+network itself did not exist), "computer" (coined in the 20th century for
+a calculating machine), and "telegraph" (the electric telegraph arrived
+in the 1830s-1840s, decades after the traveler left). The same rule bars
+"email", "website", "software", "robot", "pixel" and every other entry in
+the denylist below; the sentence is checked word by word against it.
+
+The form rules are just as strict: exactly one sentence, so the whole
+explanation must fit in a single breath of thought, and at most 200
+characters, so it stays short enough to be spoken aloud in one go. The
+sentence must end with exactly one period and contain no other
+sentence-ending marks, so there is no room for a second sentence to hide.
 
 Deterministic, Python 3.13 standard library only, no network access.
 Writes the sentence to $MAKEFUN_OUTPUT_DIR/entry.txt
@@ -38,6 +51,8 @@ DENYLIST = {
     "smartphone", "phone", "radio", "television", "robot", "ai",
     "cyber", "virtual", "pixel", "code", "program", "app", "chat",
     "message", "text", "device", "machine", "engine", "signal",
+    "photograph", "satellite", "airplane", "automobile", "plastic",
+    "rocket", "laser", "microwave",
 }
 
 MAX_CHARS = 200
@@ -53,9 +68,13 @@ def validate(sentence: str) -> None:
             f"sentence is {len(text)} characters, over the {MAX_CHARS} limit"
         )
     # Exactly one sentence: one period, at the very end, no other
-    # sentence-ending marks.
+    # sentence-ending marks. The sentence must end with exactly one
+    # period: a doubled period ("..") or a period anywhere but the end
+    # would mean two sentences, or a sentence cut short.
     if text.count(".") != 1 or not text.endswith("."):
         raise ValueError("sentence must be exactly one sentence ending in '.'")
+    if text.endswith(".."):
+        raise ValueError("sentence must end with exactly one period")
     if any(mark in text for mark in ("!", "?", ";", ":", "\n")):
         raise ValueError("sentence must be a single plain sentence")
     words = text.lower().replace(".", "").replace(",", "").split()
